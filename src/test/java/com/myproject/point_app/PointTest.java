@@ -1,113 +1,123 @@
 package com.myproject.point_app;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
 import static org.junit.jupiter.api.Assertions.*;
 import java.util.ArrayList;
 import java.util.List;
 
-class PointTest {
+public class PointTest {
 
-    @Test
-    void testDefaultConstructor() {
-        Point p = new Point();
-        assertEquals(1, p.y);
-        assertEquals(-1, p.x);
+    private Point point;
+
+    // Before each test, initialize the point to start at (0, 0)
+    @BeforeEach
+    void setup() {
+        point = new Point();
     }
 
+    // 1. A Point must start from (0,0)
     @Test
-    void testParameterizedConstructor() {
-        Point p = new Point(5, 10);
-        assertEquals(10, p.x);  // The order in constructor seems swapped
-        assertEquals(5, p.y);
+    void testPointStartsAtOrigin() {
+        assertEquals(0, point.x);
+        assertEquals(0, point.y);
     }
 
-    @Test
-    void testCopyConstructor() {
-        Point p1 = new Point(3, 4);
-        Point p2 = new Point(p1);
-        assertEquals(p1.x, p2.x);
-        assertEquals(p1.y, p2.y);
-    }
-
-    @Test
-    void testXDistance() {
-        Point p1 = new Point(5, 10);
-        Point p2 = new Point(8, 12);
-        assertEquals(2, p1.xDistance(p2));
-    }
-
-    @Test
-    void testYDistance() {
-        Point p1 = new Point(5, 10);
-        Point p2 = new Point(8, 12);
-        assertEquals(3, p1.yDistance(p2));
-    }
-
+    // 2. manhattanDistance(Point) returns the Manhattan distance
     @Test
     void testManhattanDistance() {
-        Point p1 = new Point(3, 3);
-        Point p2 = new Point(6, 7);
-        assertEquals(7, p1.manhattanDistance(p2));
+        Point p2 = new Point(3, 4);
+        int distance = point.manhattanDistance(p2);
+        assertEquals(7, distance);  // |3 - 0| + |4 - 0| = 7
     }
 
+    // 3. squaredEuclideanDistance(Point) returns the Squared Euclidean distance
     @Test
     void testSquaredEuclideanDistance() {
-        Point p1 = new Point(3, 3);
-        Point p2 = new Point(6, 7);
-        assertEquals(25, p1.squaredEuclideanDistance(p2));
+        Point p2 = new Point(3, 4);
+        int distance = point.squaredEuclideanDistance(p2);
+        assertEquals(25, distance);  // (3 - 0)^2 + (4 - 0)^2 = 9 + 16 = 25
     }
 
+    // 4. All distances must be positive integers
     @Test
-    void testIsOutsideSpaceTrue() {
-        Point p1 = new Point(12, 5);
-        assertTrue(p1.isOutsideSpace());
+    void testAllDistancesArePositive() {
+        Point p2 = new Point(3, 4);
+        int manhattanDistance = point.manhattanDistance(p2);
+        int euclideanDistance = point.squaredEuclideanDistance(p2);
+        assertTrue(manhattanDistance > 0);
+        assertTrue(euclideanDistance > 0);
     }
 
+    // 5. Manhattan distance squared must be greater than or equal to Squared Euclidean distance
     @Test
-    void testIsOutsideSpaceFalse() {
-        Point p1 = new Point(5, 5);
-        assertFalse(p1.isOutsideSpace());
+    void testManhattanGreaterThanOrEqualToEuclidean() {
+        Point p2 = new Point(3, 4);
+        int manhattanDistanceSquared = (int) Math.pow(point.manhattanDistance(p2), 2);
+        int squaredEuclideanDistance = point.squaredEuclideanDistance(p2);
+        assertTrue(manhattanDistanceSquared >= squaredEuclideanDistance);
     }
 
+    // 6. move(Direction) moves the Point in the correct direction
     @Test
     void testMoveNorth() {
-        Point p = new Point(0, 0);
-        p.move(Point.Direction.NORTH);
-        assertEquals(1, p.y);
-        assertEquals(0, p.x);
+        point.move(Point.Direction.NORTH);
+        assertEquals(1, point.y);
+        assertEquals(0, point.x);
     }
 
     @Test
-    void testMoveNortheast() {
-        Point p = new Point(0, 0);
-        p.move(Point.Direction.NORTHEAST);
-        assertEquals(1, p.y);
-        assertEquals(1, p.x);
+    void testMoveEast() {
+        point.move(Point.Direction.EAST);
+        assertEquals(0, point.y);
+        assertEquals(1, point.x);
     }
 
+    // 7. The system must give an Exception if a Point is created outside the square
+    @Test
+    void testPointOutsideBoundsThrowsException() {
+        Exception exception = assertThrows(IllegalArgumentException.class, () -> {
+            new Point(12, 12);  // Coordinates are outside the 11x11 grid
+        });
+        assertEquals("Point is outside the defined space", exception.getMessage());
+    }
+
+    // 8. reflection(Point) returns the reflection of the Point over a given origin, throws exception if out of bounds
     @Test
     void testReflection() {
-        Point p = new Point(5, 5);
-        Point reflected = p.reflection(Point.origin);
-        assertEquals(-5, reflected.x);
-        assertEquals(-5, reflected.y);
+        Point p2 = new Point(3, 4);
+        Point reflected = p2.reflection(Point.origin);
+        assertEquals(-3, reflected.x);
+        assertEquals(-4, reflected.y);
     }
 
+    @Test
+    void testReflectionThrowsExceptionOutsideBounds() {
+        Point p2 = new Point(10, 10);
+        Exception exception = assertThrows(IllegalArgumentException.class, () -> {
+            p2.reflection(new Point(2, 2));  // Reflection would result in out-of-bounds point
+        });
+        assertEquals("Reflected point is outside the defined space", exception.getMessage());
+    }
+
+    // 9. Point trying to escape the boundaries must reflect over (0, 0)
+    @Test
+    void testMoveOutsideBoundsReflectsOverOrigin() {
+        point = new Point(11, 0);
+        point.move(Point.Direction.EAST);
+        assertEquals(-11, point.x);  // Point should reflect to the left side of the square
+        assertEquals(0, point.y);
+    }
+
+    // 10. neighborhoodManhattan(List<Point>, int) returns Points with Manhattan distance smaller than or equal to the given value
     @Test
     void testNeighborhoodManhattan() {
-        Point p = new Point(0, 0);
-        List<Point> candidates = new ArrayList<>();
-        candidates.add(new Point(1, 1));
-        candidates.add(new Point(2, 2));
-        candidates.add(new Point(3, 3));
-
-        List<Point> neighborhood = p.neighborhoodManhattan(candidates, 2);
-        assertEquals(1, neighborhood.size());  // Only (1, 1) should be within the distance
-    }
-
-    @Test
-    void testToString() {
-        Point p = new Point(5, 6);
-        assertEquals("(6,5)", p.toString());
+        List<Point> points = new ArrayList<>();
+        points.add(new Point(1, 1));
+        points.add(new Point(3, 3));
+        points.add(new Point(5, 5));
+        
+        List<Point> neighborhood = point.neighborhoodManhattan(points, 3);
+        assertEquals(2, neighborhood.size());  // Only (1,1) and (3,3) are within Manhattan distance <= 3
     }
 }
